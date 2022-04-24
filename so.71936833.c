@@ -15,20 +15,20 @@
 
 uint64_t u4x16_sse_shuffle (uint64_t src, uint64_t idx)
 {
-    __m128i v_dst, v_src, v_idx, hi;
+    __m128i v_dst, v_src, v_idx, tmp;
 
     /* u4x16 nibbles to xmm u8x16: [0:n[15], .., 0:n[0]] */
 
 #if (1) /* Cordes: SSE2 instructions */
 
     v_src = _mm_cvtsi64_si128((int64_t) src);
-    hi = _mm_srli_epi32(v_src, 4);
-    v_src = _mm_unpacklo_epi8(v_src, hi);
+    tmp = _mm_srli_epi32(v_src, 4);
+    v_src = _mm_unpacklo_epi8(v_src, tmp);
     v_src = _mm_and_si128(v_src, _mm_set1_epi8(0x0f));
 
     v_idx = _mm_cvtsi64_si128((int64_t) idx);
-    hi = _mm_srli_epi32(v_idx, 4);
-    v_idx = _mm_unpacklo_epi8(v_idx, hi);
+    tmp = _mm_srli_epi32(v_idx, 4);
+    v_idx = _mm_unpacklo_epi8(v_idx, tmp);
     v_idx = _mm_and_si128(v_idx, _mm_set1_epi8(0x0f));
 
 #else   /* u64 AND + SHIFT */
@@ -39,14 +39,14 @@ uint64_t u4x16_sse_shuffle (uint64_t src, uint64_t idx)
     u64_lo = src & split;
     v_src = _mm_cvtsi64_si128((int64_t) u64_lo);
     u64_hi = (src & ~(split)) >> 4;
-    hi = _mm_cvtsi64_si128((int64_t) u64_hi);
-    v_src = _mm_unpacklo_epi8(v_src, hi);
+    tmp = _mm_cvtsi64_si128((int64_t) u64_hi);
+    v_src = _mm_unpacklo_epi8(v_src, tmp);
 
     u64_lo = idx & split;
     v_idx = _mm_cvtsi64_si128((int64_t) u64_lo);
     u64_hi = (idx & ~(split)) >> 4;
-    hi = _mm_cvtsi64_si128((int64_t) u64_hi);
-    v_idx = _mm_unpacklo_epi8(v_idx, hi);
+    tmp = _mm_cvtsi64_si128((int64_t) u64_hi);
+    v_idx = _mm_unpacklo_epi8(v_idx, tmp);
 
 #endif
 
@@ -66,14 +66,11 @@ uint64_t u4x16_sse_shuffle (uint64_t src, uint64_t idx)
 
 #else   /* recombine: SHIFT + OR + SHUFFLE: */
 
-    __m128i m_odd = _mm_set_epi64x(
-        INT64_C(-1), INT64_C(0x0f0d0b0907050301));
+    __m128i m_mix = _mm_set_epi64x(
+        INT64_C(-1), INT64_C(0x0e0c0a0806040200));
 
-    hi = _mm_slli_epi64(v_dst, 4);
-    v_dst = _mm_bslli_si128(v_dst, 1);
-
-    /* clang-14.0.1 replacing bslli_si128 with pshufb! */
-    v_dst = _mm_shuffle_epi8(_mm_or_si128(v_dst, hi), m_odd);
+    tmp = _mm_srli_epi64(v_dst, 4);
+    v_dst = _mm_shuffle_epi8(_mm_or_si128(v_dst, tmp), m_mix);
 
 #endif
 
