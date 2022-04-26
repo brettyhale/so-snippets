@@ -1,6 +1,7 @@
 /*******************************************************************************
 *
 * stackoverflow.com/questions/71936833/nibble-shuffling-with-x64-simd
+* https://godbolt.org/z/qMca4sPbh
 *
 * Authors: Brett Hale (906839), Peter Cordes (224132)
 * SPDX-License-Identifier: CC-BY-SA-4.0 OR CC0-1.0
